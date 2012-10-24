@@ -56,8 +56,8 @@ run_1 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . leng
 
 {-- let's try longer funges. --}
 
-run_2_core n = doRandomFunge (runFor n) [20] [0] [1] (defaultConfig { charSet = chars1D, trace = noTrace, acceptUserInput = False, activeExtensions = "" })
-run_2 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . length . catMaybes . map fst) (sequence . replicate runs $ run_2_core cycles)
+run_2_core dim n = doRandomFunge (runFor n) [dim] [0] [1] (defaultConfig { charSet = chars1D, trace = noTrace, acceptUserInput = False, activeExtensions = "" })
+run_2 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . length . catMaybes . map fst) (sequence . replicate runs $ run_2_core 20 cycles)
 
 {--
   100 100 -> 29% 17% 30% 29% 21% 
@@ -82,4 +82,62 @@ run_2 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . leng
     10000 7 -> 18.17% 19.35% 18.47% 19.30% 18.87%
     10000 6 -> 17.96% 17.58% 17.91% 18.20% 17.75%
     10000 5 -> 15.65% 15.76% 16.76% 16.17% 16.41%
+    10000 4 -> 14.97% 14.77% 14.23% 14.60% 13.65%
+    10000 3 -> 12.61% 12.54% 12.22% 13.14% 13.07%
+    10000 2 ->  9.67% 10.03% 10.15% 10.41% 10.32%
+    10000 1 ->  7.38%  7.40%  7.13%  7.55%  7.67%  
+
+    10000 1000 -> 27.27% 
+    (JumpForward needs to be limited too. )
+    27.96% 27.33% 27.71% 27.77% 27.00%
 --} 
+
+run_3_core dim n = doRandomFunge (runFor n) [dim, dim] [0, 0] [1, 0] (defaultConfig { charSet = chars2D, trace = noTrace, acceptUserInput = False, activeExtensions = "" })
+go core runs dim cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . length . catMaybes . map fst) (sequence . replicate runs $ core dim cycles)
+
+{-- 10000 10 10 -> 
+
+;bw[[d-nb%
+%5<f4xn@s?
+20_][nq@@a
+b8ju9<cs'g
+<1';x}]*!7
+*/.?$2?fkr
+++0^{#6$*4
+j1x;p9{f2c
+^`2<n`9 :\
+a%1] |%8:8
+
+The problem is the TurnRight at [3,9] ( we go [0,0] [1,0] [2,0] ^ [2,9] [2,8] [2,7] x(1,2) [3,9] ). Turning right should make this [-2,1] so the next instruction should be [1,10]. 
+This is out of bounds so we need to backTrack - to [3,9], then [5,8], then [7,7], then [9,5] which should be the next instruction. That's an 'r' or Reverse which should execute.
+
+Wow. MISTAKE in LeftOf. Might need to run some prior runs again to confirm results.
+
+ run_3_core 10000 10 10 -> 23.17% 22.12% 
+
+/2-^sk5!;{
+p:'kng d?^
+{``k.2e+:-
+srwkk/3sn<
+uq3nc}  w5
+;_>9f1a;$!
+8,:u,"a]gj
+"*f7,1r;wq
+{[?a`p|{kx
+?j?j`c{5?k
+
+at [3,9] heading [0,-1] JumpForward(-2). This will take us to [3,11] which will update to [3,10] and should then be [3,9] again.
+
+Minimal model: /2-^?j?j. Exhibits same problem. 
+pointingTowards [3,2] [0,-1] [(0,4),(0,2)] returns False, but should return True. Stupid out-by-one.
+
+ 22.02% 21.88% 22.64% 22.39% 22.63%
+ 10000 10 100 -> 30.97% 30.50% 30.03% 30.66% 30.81%
+ 10000 10 50  -> 30.09% 30.63% 29.93% 29.86% 29.87%
+ 10000 10 20  -> 26.80% 26.96% 27.65% 27.04% 27.32%
+
+--}
+main = do
+  result <- go run_3_core 10000 10 20
+  putStrLn $ show result
+

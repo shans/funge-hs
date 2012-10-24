@@ -136,7 +136,7 @@ linearWrapIP :: VMRunner ()
 linearWrapIP = do
   (loc, dir, offset) <- getIP
   bounds <- getBounds
-  if leftOf loc dir bounds then do
+  if pointingTowards loc dir bounds then do
     let loc' = updateUntilInside bounds loc dir
     putIP (loc', dir, offset)
   else do
@@ -149,8 +149,8 @@ linearWrapIP = do
           where
             loc' = update loc dir
 
-leftOf [] [] [] = False
-leftOf (h:t) (h':t') ((l,r):t'') = if (h' > 0 && h < l) || (h' < 0 && h > l) then True else leftOf t t' t''
+pointingTowards [] [] [] = False
+pointingTowards (h:t) (h':t') ((l,r):t'') = if (h' > 0 && h < l) || (h' < 0 && h >= r) then True else pointingTowards t t' t''
 
 execute :: Instruction -> VMRunner (Maybe Int)
 execute Stop = return (Just 0)
@@ -203,7 +203,7 @@ execute' Trampoline = do
 execute' JumpForward = do
   (loc, dir, offset) <- getIP
   amount <- pop
-  putIP (update loc (map (*amount) dir), dir, offset)
+  if (abs amount > instruction_bound) then do { push amount; execute' $ Reverse (ord 'j') } else putIP (update loc (map (*amount) dir), dir, offset)
 execute' (Push n _) = push n
 execute' Add = do {a <- pop; b <- pop; push (a + b)}
 execute' Multiply = do {a <- pop; b <- pop; push (a * b)}
