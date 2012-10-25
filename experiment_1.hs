@@ -59,7 +59,7 @@ run_1 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . leng
 run_2_core dim n = doRandomFunge (runFor n) [dim] [0] [1] (defaultConfig { charSet = chars1D, trace = noTrace, acceptUserInput = False, activeExtensions = "" })
 run_2 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . length . catMaybes . map fst) (sequence . replicate runs $ run_2_core 20 cycles)
 
-{--
+{-- all dim=20:
   100 100 -> 29% 17% 30% 29% 21% 
   1000 100 -> 25.8% 28% 28%  
   ( "fa}$9,[r13u$\"/k*pn;4" JumpOver, empty stack, huge bounds. I think to support this kind of thing we'll need sparse ranges. I think to do *that* I'll want a range module with
@@ -75,7 +75,8 @@ run_2 runs cycles = liftM ((* 100) . (/ fromIntegral runs) . fromIntegral . leng
   27.71% 26.76% 26.91% 27.78% 28.46%
 --}
 
-{-- 10000 10 -> 22.09% 21.32% 19.72% 21.53% 21.26%
+{-- also dim=20:
+    10000 10 -> 22.09% 21.32% 19.72% 21.53% 21.26%
     100000 9 -> 20.694%
     10000 9 -> 20.60% 21.06% 19.45% 20.66% 19.91%
     10000 8 -> 19.68% 19.44% 19.90% 19.53% 20.02%
@@ -137,7 +138,23 @@ pointingTowards [3,2] [0,-1] [(0,4),(0,2)] returns False, but should return True
  10000 10 20  -> 26.80% 26.96% 27.65% 27.04% 27.32%
 
 --}
+
+run_4_core dim n = doRandomFunge (runFor n) [dim, dim, dim] [0, 0, 0] [1, 0, 0] (defaultConfig { charSet = chars3D, trace = noTrace, acceptUserInput = False, activeExtensions = "",
+										 		 printer = (\_ _ -> putStr ".") })
+
+{--
+
+ run_4_core 10000 10 10 -> 21.43% 21.78% 21.89%
+
+--}
+
 main = do
-  result <- go run_3_core 10000 10 20
+  result <- go run_2_core 10000 1000 100
   putStrLn $ show result
 
+{--
+  run_2_core 10000 100 10   -> 21.86% 21.56% 22.06% 22.31% 22.05%
+  run_2_core 10000 100 100  -> 30.11% 29.72% 30.55% 29.69% 29.44%
+  run_2_core 10000 1000 10  -> 21.62% 21.76% 21.63% 20.88% 21.93%
+  run_2_core 10000 1000 100 -> 29.75% 31.54% 31.20% 
+--}
