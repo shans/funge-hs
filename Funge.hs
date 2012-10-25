@@ -203,7 +203,7 @@ execute' Trampoline = do
 execute' JumpForward = do
   (loc, dir, offset) <- getIP
   amount <- pop
-  if (abs amount > instruction_bound) then do { push amount; execute' $ Reverse (ord 'j') } else putIP (update loc (map (*amount) dir), dir, offset)
+  if (outOfBounds amount) then do { push amount; execute' $ Reverse (ord 'j') } else putIP (update loc (map (*amount) dir), dir, offset)
 execute' (Push n _) = push n
 execute' Add = do {a <- pop; b <- pop; push (a + b)}
 execute' Multiply = do {a <- pop; b <- pop; push (a * b)}
@@ -240,7 +240,7 @@ execute' GoAway = do
 -- Modified to fail if the frame size is excessively large.
 execute' BeginBlock = do
   n <- pop
-  if (abs n > instruction_bound) then do { push n; execute' (Reverse (ord '{')); } else do 
+  if (outOfBounds n) then do { push n; execute' (Reverse (ord '{')); } else do 
     values <- if n >= 0 then popn n else return (replicate (-n) 0)
     (loc, dir, offset) <- getIP
     pushn offset
@@ -249,7 +249,7 @@ execute' BeginBlock = do
     pushn values
 execute' EndBlock = do
   n <- pop
-  if (abs n > instruction_bound) then do { push n; execute' (Reverse (ord '}')); } else do
+  if (outOfBounds n) then do { push n; execute' (Reverse (ord '}')); } else do
     l <- stackLength
     values <- if n >= 0 then popn n else return []
     popped <- popStack
@@ -275,7 +275,7 @@ execute' Get = do
 execute' Put = do
   (loc, dir, offset) <- getIP
   putLoc <- popn (length offset)
-  if (length (filter ((> instruction_bound) . abs) putLoc) > 0) then do { pushn putLoc; execute' (Reverse (ord 'p')) } else do
+  if (length (filter outOfBounds putLoc) > 0) then do { pushn putLoc; execute' (Reverse (ord 'p')) } else do
     instruction <- pop
     im <- getInstructionMap
     putInstructionMap $ M.insert (update putLoc offset) (dataToCell (length offset) instruction) im
@@ -297,6 +297,9 @@ execute' InputCharacter = do
     push $ ord char
   else
     execute' (Reverse (ord '~'))
+
+outOfBounds :: Int -> Bool
+outOfBounds a = (abs a > instruction_bound || a == -2147483648)
 
 inputDecimal = do
   clearNonNumeric
@@ -329,7 +332,7 @@ fetchCharacter = do
     OutOfBounds -> do {linearWrapIP; fetchCharacter}
     Empty       -> push (ord ' ')
     StringMode  -> push (ord '"')
-    _           -> push . ord $ toChar instruction
+    _           -> push $ cellToData instruction
     
 printStack = do
   a <- pop

@@ -73,6 +73,9 @@ noTrace = return ()
 show2DFunge :: [Int] -> String -> IO ()
 show2DFunge dim field = mapM_ putStrLn (splitEvery (last dim) field)
 
+funge2DToString :: [Int] -> String -> String
+funge2DToString dim field = unlines $ splitEvery (last dim) field
+
 splitEvery :: Int -> [a] -> [[a]]
 splitEvery n l | length l < n = [l]
 splitEvery n l = (take n l):splitEvery n (drop n l)
