@@ -169,7 +169,7 @@ execute JumpOver = do {updateIP; jumpOver}
 execute Iterate = do
   (loc, dir, offset) <- getIP
   count <- pop
-  if (count > instruction_bound) then do { push count; execute' $ Reverse (ord 'k'); return Nothing } else do
+  if (fromIntegral count > instruction_bound) then do { push count; execute' $ Reverse (ord 'k'); return Nothing } else do
     updateIP
     checkInstruction
     instruction <- nextInstruction
@@ -299,7 +299,7 @@ execute' InputCharacter = do
     execute' (Reverse (ord '~'))
 
 outOfBounds :: Int -> Bool
-outOfBounds a = (abs a > instruction_bound || a == -2147483648)
+outOfBounds a = (abs (fromIntegral a) > instruction_bound || a == -2147483648)
 
 inputDecimal = do
   clearNonNumeric

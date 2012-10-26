@@ -5,7 +5,7 @@ import Control.Monad.State
 import Control.Monad.Reader
 
 -- maximum accepted stack value for nasty instructions like Iterate and BeginBlock/EndBlock
-instruction_bound :: Int
+instruction_bound :: Integer
 instruction_bound = 1024
 
 type Location = [Int]
