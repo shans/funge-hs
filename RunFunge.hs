@@ -6,7 +6,7 @@ import RandomFunge
 import Control.Monad.State
 import Control.Monad.Reader
 
-defaultConfig = Config { charSet = chars2D , trace = ipStackInstructionBoundsTrace , printer = show2DFunge , acceptUserInput = True, activeExtensions = "P" }
+defaultConfig = Config { charSet = chars2D , trace = ipStackInstructionBoundsTrace , printer = show2DFunge , acceptUserInput = True, activeExtensions = "P", randomizer = loadRandomFunge, displayOutput = True }
 
 run :: VMRunner Int
 run = do
@@ -38,7 +38,7 @@ loadAndDo exec s dim pos dir c = do
 
 doRandomFunge :: VMRunner a -> [Int] -> [Int] -> [Int] -> Config -> IO a
 doRandomFunge exec dim pos dir c = do
-  let program = runReaderT (runStateT (do { loadRandomFunge dim ; exec}) (ic pos dir)) c
+  let program = runReaderT (runStateT (do { r <- config getRandomizer; r dim ; exec}) (ic pos dir)) c
   r <- program
   return (fst r)
 

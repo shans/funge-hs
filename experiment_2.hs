@@ -2,6 +2,7 @@ import FungeBase
 import RunFunge
 import RandomFunge
 import Control.Monad
+import Control.DeepSeq
 import Data.Maybe
 import Data.List
 
@@ -10,7 +11,7 @@ import System.Posix.Signals
 
 run_1_core dim n p = doRandomFunge (runFor n) [dim] [0] [1] (defaultConfig { charSet = chars1D, trace = noTrace, acceptUserInput = False, activeExtensions = "" , printer = p })
 
-run_2_core dim n p = doRandomFunge (runFor n) [dim, dim] [0, 0] [1, 0] (defaultConfig { charSet = chars2D, trace = noTrace, acceptUserInput = False, activeExtensions = "", printer = p })
+run_2_core dim n p = doRandomFunge (runFor n) [dim, dim] [0, 0] [1, 0] (defaultConfig { charSet = chars2D, trace = noTrace, acceptUserInput = False, activeExtensions = "", printer = p, randomizer = loadRandomFunge', displayOutput = False })
 
 run_3_core dim n p = doRandomFunge (runFor n) [dim, dim, dim] [0, 0, 0] [1, 0, 0] (defaultConfig { charSet = chars3D, trace = noTrace, acceptUserInput = False, activeExtensions = "", printer = p })
 
@@ -32,8 +33,8 @@ go core dim n runs = do
 oneAtATime [] = return []
 oneAtATime (h:t) = do
   r <- h
-  --putStrLn $ show r
-  t' <- r `seq` oneAtATime t
+  -- putStrLn $ show r
+  t' <- r `deepseq` oneAtATime t
   return $ r:t'
 
 {-- 

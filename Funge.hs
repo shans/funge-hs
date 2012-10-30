@@ -9,6 +9,11 @@ import qualified Data.Map as M
 import Control.Monad.State
 import System.Random
 
+io' :: IO () -> VMRunner ()
+io' action = do
+  x <- config getDisplayOutput
+  if x then io action else return ()
+
 pop :: VMRunner Int
 pop = do
   s <- getStack
@@ -283,10 +288,10 @@ execute' Put = do
     putBounds $ zipWith (\x (l,h) -> (min x l, max (x + 1) h)) (update putLoc offset) bounds
 execute' OutputDecimal = do
   num <- pop
-  io $ putStr (show num ++ " ")
+  io' $ putStr (show num ++ " ")
 execute' OutputCharacter = do
   char <- pop
-  if (char >= 0 && char <= 1114111) then io $ putStr (chr char:"") else execute' (Reverse char)
+  if (char >= 0 && char <= 1114111) then io' $ putStr (chr char:"") else execute' (Reverse char)
 execute' InputDecimal = do
   doInput <- config getAcceptUserInput
   if doInput then inputDecimal else execute' (Reverse (ord '&'))
@@ -337,7 +342,7 @@ fetchCharacter = do
 printStack = do
   a <- pop
   case a of
-    n | n > 0 && n <= 1114111 -> do { io $ putChar (chr n); printStack }
+    n | n > 0 && n <= 1114111 -> do { io' $ putChar (chr n); printStack }
     _ -> return ()
 
 clearStack = do

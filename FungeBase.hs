@@ -46,7 +46,10 @@ data Config = Config {
   trace :: VMRunner (), 
   printer :: [Int] -> String -> IO (),
   acceptUserInput :: Bool,
-  activeExtensions :: String }
+  activeExtensions :: String,
+  randomizer :: [Int] -> VMRunner (), 
+  displayOutput :: Bool
+  }
 
 type VMConfig = ReaderT Config IO
 
@@ -97,6 +100,12 @@ getAcceptUserInput = liftM acceptUserInput ask
 
 getActiveExtensions :: VMConfig String
 getActiveExtensions = liftM activeExtensions ask
+
+getRandomizer :: VMConfig ([Int] -> VMRunner ())
+getRandomizer = liftM randomizer ask
+
+getDisplayOutput :: VMConfig Bool
+getDisplayOutput = liftM displayOutput ask
 
 -- STATE --
 
