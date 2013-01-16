@@ -66,8 +66,8 @@ stackUnderStack count = do
   s <- getStack
   case s of
     [] -> execute' (Reverse (ord 'u'))
-    [a] -> execute' (Reverse (ord 'u'))
-    (h:h':t) -> if count >= 0 then sossToToss else tossToSoss where
+    [a] -> execute' (Reverse (ord 'u')) 
+    (h:h':t) -> if outOfBounds (abs count) then do {push count; execute' (Reverse (ord 'u'))} else (if count >= 0 then sossToToss else tossToSoss) where
       sossToToss = do
 	let values = take count h'
 	let values' = values ++ replicate (count - length values) 0
@@ -232,7 +232,7 @@ execute' StoreCharacter = do
   (loc, dir, offset) <- getIP
   let loc' = update loc dir
   im <- getInstructionMap
-  putInstructionMap $ M.insert loc' (dataToCell (length loc) char) im
+  putInstructionMap $ M.insert loc' (Cached $ dataToCell (length loc) char) im
   bounds <- getBounds
   putBounds $ zipWith (\x (l,h) -> (min x l, max (x + 1) h)) loc' bounds
 execute' GoAway = do
@@ -283,7 +283,7 @@ execute' Put = do
   if (length (filter outOfBounds putLoc) > 0) then do { pushn putLoc; execute' (Reverse (ord 'p')) } else do
     instruction <- pop
     im <- getInstructionMap
-    putInstructionMap $ M.insert (update putLoc offset) (dataToCell (length offset) instruction) im
+    putInstructionMap $ M.insert (update putLoc offset) (Cached $ dataToCell (length offset) instruction) im
     bounds <- getBounds
     putBounds $ zipWith (\x (l,h) -> (min x l, max (x + 1) h)) (update putLoc offset) bounds
 execute' OutputDecimal = do
@@ -302,6 +302,7 @@ execute' InputCharacter = do
     push $ ord char
   else
     execute' (Reverse (ord '~'))
+execute' x = error $ "Can't execute " ++ (show x)
 
 outOfBounds :: Int -> Bool
 outOfBounds a = (abs (fromIntegral a) > instruction_bound || a == -2147483648)
@@ -379,11 +380,17 @@ input d pos size = do
 layoutRow :: String -> InstructionMap -> [Int] -> Int -> InstructionMap
 layoutRow d m pos 0 = m
 layoutRow (h:t) m pos@(ph:pt) n = layoutRow t (updateNonEmpty pos (decodeInstruction (length pos) h) m) (ph+1:pt) (n-1)
-layoutRow d m pos n = error $ (show d) ++ " " ++ (show m) ++ " " ++ show pos ++ " " ++ show n
+layoutRow d m pos n = error $ (show d) ++ " " ++ " " ++ show pos ++ " " ++ show n
 
 updateNonEmpty :: [Int] -> Instruction -> InstructionMap -> InstructionMap
 updateNonEmpty _ Empty m = m
-updateNonEmpty k v m = M.insert k v $ m
+updateNonEmpty k v m = M.insert k (Cached v) m
+
+-- With an action we can't tell if the to-be-determined instruction is empty.
+-- this might matter in some circumstances, although it seems we always write regardless
+-- of whether a slot is empty.
+updateWithAction :: [Int] -> IO Instruction -> InstructionMap -> InstructionMap
+updateWithAction k v m = M.insert k (Gen v) m
 
 toChar Empty = ' '
 toChar Trampoline = '#'

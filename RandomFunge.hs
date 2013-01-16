@@ -42,9 +42,11 @@ loadRandomFunge' dim = do
     
 randomFunge' :: [Instruction] -> [Int] -> [Int] -> [Int] -> InstructionMap -> IO InstructionMap
 randomFunge' _ [0] _ _ map = return map
-randomFunge' ops [l] [pos] rest map = do {op <- randomOp ops; randomFunge' ops [l - 1] [pos + 1] rest $ updateNonEmpty (rest ++ [pos]) op map }
+randomFunge' ops [l] [pos] rest map = randomFunge' ops [l - 1] [pos + 1] rest $ updateWithAction (rest ++ [pos]) (randomOp ops) map 
 randomFunge' _ (0:t) _ _ map = return map
 randomFunge' ops (h:t) (ph:pt) rest map = do { r <- randomFunge' ops t pt (ph:rest) map; randomFunge' ops ((h-1):t) ((ph+1):pt) rest r }
+
+randomOp :: [Instruction] -> IO Instruction
 randomOp opSet = do
   r <- randomIO
   return $ opSet !! (r `mod` length opSet)

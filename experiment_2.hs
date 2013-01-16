@@ -54,5 +54,13 @@ main = go run_2_core 3 1000 100000
 main = go run_2_core 32 1000 100000
 
 main = go run_2_core 100 1000 100000
-
 --}
+
+{-- pushing IO into instruction map. BEFORE random in IO:
+
+main = go run_2_core 100 1000 1000 -> 61.589s. Is this slower than before introducing IO here? x100 -> 6100 seconds ~= 1.7 hours. Probably pretty similar.
+
+--} 
+
+main = go run_2_core 10 100 100000 
+

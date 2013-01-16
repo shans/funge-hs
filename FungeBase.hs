@@ -35,11 +35,12 @@ data Instruction = Go Direction Char
 
 type Stack a = [a]
 
-type InstructionMap = M.Map [Int] Instruction
+data InstructionValue = Cached Instruction | Gen (IO Instruction)
+type InstructionMap = M.Map [Int] InstructionValue 
 type Bounds = [(Int, Int)]
 type InstructionPointer = (Location, Direction, Offset)
 
-data VM = VM InstructionMap Bounds (Stack (Stack Int)) InstructionPointer Bool (Maybe Char) deriving Show
+data VM = VM InstructionMap Bounds (Stack (Stack Int)) InstructionPointer Bool (Maybe Char)
 
 data Config = Config { 
   charSet :: String, 
@@ -178,9 +179,13 @@ pushBack char = do
 instructionAt :: Location -> VMRunner Instruction
 instructionAt loc = do
   map <- getInstructionMap
-  return $ case M.lookup loc map of
-    Just a  -> a
-    Nothing -> Empty
+  case M.lookup loc map of
+    Just (Cached a)  -> return a
+    Just (Gen a) -> do
+      i <- io a
+      putInstructionMap $ M.insert loc (Cached i) map
+      return i
+    Nothing -> return Empty
 
 nextInstruction :: VMRunner Instruction
 nextInstruction = do
